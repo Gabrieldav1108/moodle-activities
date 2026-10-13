@@ -64,3 +64,15 @@ select:focus[data-flux-control] {
 /* \[:where(&)\]:size-4 {
     @apply size-4;
 } */
+
+/* Minimal styles for Markdown rendered from review notes */
+.markdown { @apply space-y-3 leading-relaxed; }
+.markdown h1, .markdown h2, .markdown h3 { @apply font-semibold text-zinc-800 dark:text-white; }
+.markdown h1 { @apply text-lg; }
+.markdown h2 { @apply text-base; }
+.markdown ul { @apply list-disc ps-5 space-y-1; }
+.markdown ol { @apply list-decimal ps-5 space-y-1; }
+.markdown code { @apply rounded bg-zinc-100 px-1 font-mono text-xs dark:bg-zinc-700; }
+.markdown pre { @apply overflow-auto rounded bg-zinc-100 p-3 dark:bg-zinc-900; }
+.markdown pre code { @apply bg-transparent p-0; }
+.markdown a { @apply underline; }

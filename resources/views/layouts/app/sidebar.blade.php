@@ -15,20 +15,19 @@
                     <flux:sidebar.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
                         {{ __('Dashboard') }}
                     </flux:sidebar.item>
+                    <flux:sidebar.item icon="academic-cap" :href="route('assignments.index')" :current="request()->routeIs('assignments.*')" wire:navigate>
+                        {{ __('Assignments') }}
+                    </flux:sidebar.item>
+                    <flux:sidebar.item icon="queue-list" :href="route('runs.index')" :current="request()->routeIs('runs.*')" wire:navigate>
+                        {{ __('Runs') }}
+                    </flux:sidebar.item>
+                    <flux:sidebar.item icon="clock" :href="route('automation.edit')" :current="request()->routeIs('automation.*')" wire:navigate>
+                        {{ __('Automation') }}
+                    </flux:sidebar.item>
                 </flux:sidebar.group>
             </flux:sidebar.nav>
 
             <flux:spacer />
-
-            <flux:sidebar.nav>
-                <flux:sidebar.item icon="folder-git-2" href="https://github.com/laravel/livewire-starter-kit" target="_blank">
-                    {{ __('Repository') }}
-                </flux:sidebar.item>
-
-                <flux:sidebar.item icon="book-open-text" href="https://laravel.com/docs/starter-kits#livewire" target="_blank">
-                    {{ __('Documentation') }}
-                </flux:sidebar.item>
-            </flux:sidebar.nav>
 
             <x-desktop-user-menu class="hidden lg:block" :name="auth()->user()->name" />
         </flux:sidebar>
