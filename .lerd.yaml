@@ -1,0 +1,18 @@
+domains:
+  - ifrs-painel
+php_version: "8.5"
+node_version: "22"
+framework: laravel
+framework_version: "13"
+secured: true
+workers:
+  - moodle-worker
+  - schedule
+custom_workers:
+  moodle-worker:
+    label: Moodle worker (Python)
+    command: worker/.venv/bin/python worker/run.py run
+    restart: always
+    check:
+      file: worker/.env
+    host: true
