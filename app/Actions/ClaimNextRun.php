@@ -43,8 +43,8 @@ class ClaimNextRun
 
         return [
             'run' => ['id' => $run->id, 'type' => $run->type->value],
-            'engine' => $settings->engine->value,
-            'model' => $run->model->value,
+            'engine' => $run->engine->value,
+            'model' => $run->model,
             'effort' => $run->effort->value,
             'force' => $run->force,
             'days_back' => $settings->days_back,
@@ -54,7 +54,7 @@ class ClaimNextRun
                 'username' => $settings->moodle_username,
                 'password' => $settings->moodle_password,
             ],
-            'anthropic_api_key' => $settings->anthropic_api_key,
+            'api_key' => $settings->apiKeyFor($run->engine),
             'target' => $run->assignment
                 ? [
                     'cmid' => $run->assignment->cmid,

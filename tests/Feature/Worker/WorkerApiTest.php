@@ -5,6 +5,7 @@ namespace Tests\Feature\Worker;
 use App\Enums\AssignmentStatus;
 use App\Enums\RunStatus;
 use App\Enums\RunType;
+use App\Enums\SolverEngine;
 use App\Models\Assignment;
 use App\Models\Run;
 use App\Models\Setting;
@@ -85,12 +86,27 @@ class WorkerApiTest extends TestCase
             ->assertJsonPath('engine', 'claude_code')
             ->assertJsonPath('moodle.username', 'aluno')
             ->assertJsonPath('moodle.password', 'senha')
-            ->assertJsonPath('anthropic_api_key', 'sk-test')
+            ->assertJsonPath('api_key', null)
             ->assertJsonPath('target', null);
 
         $this->assertSame(RunStatus::Running, $first->fresh()->status);
         $this->worker()->postJson(route('worker.claim'))->assertOk()->assertJsonPath('run.id', $first->id + 1);
         $this->worker()->postJson(route('worker.claim'))->assertNoContent();
+    }
+
+    public function test_claim_sends_the_api_key_of_the_run_engine(): void
+    {
+        Setting::current()->update(['anthropic_api_key' => 'sk-test', 'gemini_api_key' => 'AIza-test']);
+        Run::queue(RunType::Manual, SolverEngine::Gemini, 'gemini-3.8-flash');
+        Run::queue(RunType::Manual, SolverEngine::Api);
+
+        $this->worker()->postJson(route('worker.claim'))
+            ->assertJsonPath('engine', 'gemini')
+            ->assertJsonPath('model', 'gemini-3.8-flash')
+            ->assertJsonPath('api_key', 'AIza-test');
+        $this->worker()->postJson(route('worker.claim'))
+            ->assertJsonPath('engine', 'api')
+            ->assertJsonPath('api_key', 'sk-test');
     }
 
     public function test_redo_runs_include_the_target_assignment(): void

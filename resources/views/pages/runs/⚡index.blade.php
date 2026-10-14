@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\SolverEngine;
 use App\Models\Run;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
@@ -43,7 +44,7 @@ new #[Title('Runs')] class extends Component {
                     <flux:table.cell>
                         <flux:badge :color="$run->status->color()" size="sm">{{ $run->status->label() }}</flux:badge>
                     </flux:table.cell>
-                    <flux:table.cell class="max-md:hidden">{{ $run->model->label() }} · {{ $run->effort->label() }}</flux:table.cell>
+                    <flux:table.cell class="max-md:hidden">{{ SolverEngine::modelLabel($run->model) }} · {{ $run->effort->label() }}</flux:table.cell>
                     <flux:table.cell>{{ $run->created_at->format('d/m H:i') }}</flux:table.cell>
                     <flux:table.cell class="max-md:hidden">
                         {{ $run->started_at && $run->finished_at ? $run->started_at->diffForHumans($run->finished_at, true) : '—' }}

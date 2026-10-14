@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\RunStatus;
+use App\Enums\SolverEngine;
 use App\Models\Run;
 use Flux\Flux;
 use Livewire\Attributes\Title;
@@ -23,7 +24,7 @@ new #[Title('Run')] class extends Component {
         <div>
             <flux:heading size="xl" level="1">{{ __('Run') }} #{{ $run->id }}</flux:heading>
             <flux:text class="mt-1">
-                {{ $run->type->label() }} · {{ $run->model->label() }} · {{ __('Effort') }}: {{ $run->effort->label() }}
+                {{ $run->type->label() }} · {{ $run->engine->label() }} · {{ SolverEngine::modelLabel($run->model) }} · {{ __('Effort') }}: {{ $run->effort->label() }}
                 · {{ $run->created_at->format('d/m/Y H:i') }}
             </flux:text>
         </div>

@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Enums\ClaudeModel;
 use App\Enums\Effort;
 use App\Enums\SolverEngine;
 use Carbon\CarbonImmutable;
@@ -19,7 +18,7 @@ use Illuminate\Support\Carbon;
  * @property SolverEngine $engine
  * @property list<string> $run_times
  * @property list<int> $weekdays
- * @property ClaudeModel $model
+ * @property string $model
  * @property Effort $effort
  * @property int $days_back
  * @property int $days_ahead
@@ -27,13 +26,14 @@ use Illuminate\Support\Carbon;
  * @property string|null $moodle_username
  * @property string|null $moodle_password
  * @property string|null $anthropic_api_key
+ * @property string|null $gemini_api_key
  * @property Carbon|null $worker_seen_at
  */
 #[Fillable([
     'enabled', 'engine', 'run_times', 'weekdays', 'model', 'effort', 'days_back', 'days_ahead',
-    'moodle_url', 'moodle_username', 'moodle_password', 'anthropic_api_key', 'worker_seen_at',
+    'moodle_url', 'moodle_username', 'moodle_password', 'anthropic_api_key', 'gemini_api_key', 'worker_seen_at',
 ])]
-#[Hidden(['moodle_password', 'anthropic_api_key'])]
+#[Hidden(['moodle_password', 'anthropic_api_key', 'gemini_api_key'])]
 class Setting extends Model
 {
     public static function current(): self
@@ -43,12 +43,19 @@ class Setting extends Model
             'engine' => SolverEngine::ClaudeCode,
             'run_times' => ['07:00', '19:00'],
             'weekdays' => [0, 1, 2, 3, 4, 5, 6],
-            'model' => ClaudeModel::Opus55,
+            'model' => SolverEngine::ClaudeCode->defaultModel(),
             'effort' => Effort::High,
             'days_back' => 30,
             'days_ahead' => 120,
             'moodle_url' => 'https://presencial.ifrs.edu.br',
         ]);
+    }
+
+    public function apiKeyFor(SolverEngine $engine): ?string
+    {
+        $attribute = $engine->apiKeyAttribute();
+
+        return $attribute ? $this->{$attribute} : null;
     }
 
     public function workerOnline(): bool
@@ -94,12 +101,12 @@ class Setting extends Model
             'engine' => SolverEngine::class,
             'run_times' => 'array',
             'weekdays' => 'array',
-            'model' => ClaudeModel::class,
             'effort' => Effort::class,
             'days_back' => 'integer',
             'days_ahead' => 'integer',
             'moodle_password' => 'encrypted',
             'anthropic_api_key' => 'encrypted',
+            'gemini_api_key' => 'encrypted',
             'worker_seen_at' => 'datetime',
         ];
     }

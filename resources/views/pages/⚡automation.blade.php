@@ -1,6 +1,5 @@
 <?php
 
-use App\Enums\ClaudeModel;
 use App\Enums\Effort;
 use App\Enums\SolverEngine;
 use App\Models\Setting;
@@ -37,15 +36,28 @@ new #[Title('Automation')] class extends Component {
 
     public string $anthropic_api_key = '';
 
+    public string $gemini_api_key = '';
+
     public function mount(): void
     {
         $settings = Setting::current();
 
         $this->fill($settings->only(['enabled', 'run_times', 'weekdays', 'days_back', 'days_ahead', 'moodle_url']));
         $this->engine = $settings->engine->value;
-        $this->model = $settings->model->value;
+        $this->model = $settings->model;
         $this->effort = $settings->effort->value;
         $this->moodle_username = (string) $settings->moodle_username;
+    }
+
+    /**
+     * Switching provider picks its default model unless the current one belongs to it.
+     */
+    public function updatedEngine(string $value): void
+    {
+        $engine = SolverEngine::tryFrom($value);
+        if ($engine && ! array_key_exists($this->model, $engine->models())) {
+            $this->model = $engine->defaultModel();
+        }
     }
 
     public function addTime(): void
@@ -68,7 +80,7 @@ new #[Title('Automation')] class extends Component {
             'weekdays' => ['array'],
             'weekdays.*' => ['integer', 'between:0,6'],
             'engine' => ['required', Rule::enum(SolverEngine::class)],
-            'model' => ['required', Rule::enum(ClaudeModel::class)],
+            'model' => SolverEngine::modelRules(),
             'effort' => ['required', Rule::enum(Effort::class)],
             'days_back' => ['required', 'integer', 'between:0,365'],
             'days_ahead' => ['required', 'integer', 'between:1,365'],
@@ -76,6 +88,7 @@ new #[Title('Automation')] class extends Component {
             'moodle_username' => ['nullable', 'string', 'max:255'],
             'moodle_password' => ['nullable', 'string', 'max:255'],
             'anthropic_api_key' => ['nullable', 'string', 'max:500'],
+            'gemini_api_key' => ['nullable', 'string', 'max:500'],
         ]);
 
         $validated['run_times'] = collect($validated['run_times'])->sort()->values()->all();
@@ -83,7 +96,7 @@ new #[Title('Automation')] class extends Component {
         $validated['moodle_url'] = rtrim($validated['moodle_url'], '/');
 
         // Secrets are write-only: an empty field keeps the stored value.
-        foreach (['moodle_password', 'anthropic_api_key'] as $secret) {
+        foreach (['moodle_password', 'anthropic_api_key', 'gemini_api_key'] as $secret) {
             if (blank($validated[$secret])) {
                 unset($validated[$secret]);
             }
@@ -93,7 +106,7 @@ new #[Title('Automation')] class extends Component {
         unset($this->settings);
 
         $this->run_times = $validated['run_times'];
-        $this->reset('moodle_password', 'anthropic_api_key');
+        $this->reset('moodle_password', 'anthropic_api_key', 'gemini_api_key');
 
         Flux::toast(variant: 'success', text: __('Settings saved.'));
     }
@@ -157,18 +170,22 @@ new #[Title('Automation')] class extends Component {
         <flux:card class="space-y-6">
             <flux:heading size="lg">{{ __('AI model') }}</flux:heading>
 
-            <flux:radio.group wire:model="engine" :label="__('Generate drafts with')">
+            <flux:radio.group wire:model.live="engine" :label="__('Generate drafts with')">
                 @foreach (SolverEngine::cases() as $option)
                     <flux:radio :value="$option->value" :label="$option->label()" />
                 @endforeach
             </flux:radio.group>
 
             <div class="grid gap-4 sm:grid-cols-2">
-                <flux:select wire:model="model" :label="__('Model')">
-                    @foreach (ClaudeModel::cases() as $option)
-                        <flux:select.option :value="$option->value">{{ $option->label() }}</flux:select.option>
-                    @endforeach
-                </flux:select>
+                <div>
+                    <flux:input wire:model="model" :label="__('Model')" list="model-suggestions" autocomplete="off"
+                        :description="__('Pick a suggestion or type any model ID the provider accepts.')" />
+                    <datalist id="model-suggestions">
+                        @foreach (SolverEngine::tryFrom($engine)?->models() ?? [] as $id => $label)
+                            <option value="{{ $id }}">{{ $label }}</option>
+                        @endforeach
+                    </datalist>
+                </div>
 
                 <flux:select wire:model="effort" :label="__('Effort')">
                     @foreach (Effort::cases() as $option)
@@ -191,6 +208,9 @@ new #[Title('Automation')] class extends Component {
                     :placeholder="filled($this->settings->moodle_password) ? '•••••••• '.__('set') : __('not set')"
                     :description="__('Leave blank to keep the current one.')" />
             </div>
+            <flux:input wire:model="gemini_api_key" :label="__('Google Gemini API key')" type="password" viewable autocomplete="off"
+                :placeholder="filled($this->settings->gemini_api_key) ? '•••••••• '.__('set') : __('not set')"
+                :description="__('Free key at aistudio.google.com/apikey. Only needed for Gemini. Leave blank to keep the current one.')" />
             <flux:input wire:model="anthropic_api_key" :label="__('Anthropic API key')" type="password" viewable autocomplete="off"
                 :placeholder="filled($this->settings->anthropic_api_key) ? '•••••••• '.__('set') : __('not set')"
                 :description="__('Only needed when drafts are generated with the Anthropic API. Leave blank to keep the current one.')" />

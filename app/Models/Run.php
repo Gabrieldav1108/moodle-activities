@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
-use App\Enums\ClaudeModel;
 use App\Enums\Effort;
 use App\Enums\RunStatus;
 use App\Enums\RunType;
+use App\Enums\SolverEngine;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -18,7 +18,8 @@ use Illuminate\Support\Carbon;
  * @property int $id
  * @property RunType $type
  * @property RunStatus $status
- * @property ClaudeModel $model
+ * @property SolverEngine $engine
+ * @property string $model
  * @property Effort $effort
  * @property bool $force
  * @property int|null $assignment_id
@@ -30,7 +31,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon $updated_at
  * @property-read Assignment|null $assignment
  */
-#[Fillable(['type', 'status', 'model', 'effort', 'force', 'assignment_id', 'log', 'error', 'started_at', 'finished_at'])]
+#[Fillable(['type', 'status', 'engine', 'model', 'effort', 'force', 'assignment_id', 'log', 'error', 'started_at', 'finished_at'])]
 class Run extends Model
 {
     /**
@@ -38,7 +39,8 @@ class Run extends Model
      */
     public static function queue(
         RunType $type,
-        ?ClaudeModel $model = null,
+        ?SolverEngine $engine = null,
+        ?string $model = null,
         ?Effort $effort = null,
         ?Assignment $assignment = null,
         bool $force = false,
@@ -48,6 +50,7 @@ class Run extends Model
         return self::query()->create([
             'type' => $type,
             'status' => RunStatus::Pending,
+            'engine' => $engine ?? $settings->engine,
             'model' => $model ?? $settings->model,
             'effort' => $effort ?? $settings->effort,
             'assignment_id' => $assignment?->id,
@@ -92,7 +95,7 @@ class Run extends Model
         return [
             'type' => RunType::class,
             'status' => RunStatus::class,
-            'model' => ClaudeModel::class,
+            'engine' => SolverEngine::class,
             'effort' => Effort::class,
             'force' => 'boolean',
             'started_at' => 'datetime',

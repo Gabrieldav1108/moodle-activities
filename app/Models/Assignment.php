@@ -3,8 +3,8 @@
 namespace App\Models;
 
 use App\Enums\AssignmentStatus;
-use App\Enums\ClaudeModel;
 use App\Enums\Effort;
+use App\Enums\SolverEngine;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
@@ -28,7 +28,8 @@ use Illuminate\Support\Carbon;
  * @property string|null $summary
  * @property string|null $review_notes
  * @property AssignmentStatus $status
- * @property ClaudeModel|null $model
+ * @property SolverEngine|null $engine
+ * @property string|null $model
  * @property Effort|null $effort
  * @property Carbon|null $generated_at
  * @property string|null $error
@@ -40,7 +41,7 @@ use Illuminate\Support\Carbon;
 #[Fillable([
     'cmid', 'event_id', 'name', 'course', 'module', 'due_at', 'overdue', 'url',
     'statement_md', 'statement_html', 'summary', 'review_notes', 'status',
-    'model', 'effort', 'generated_at', 'error', 'last_run_id',
+    'engine', 'model', 'effort', 'generated_at', 'error', 'last_run_id',
 ])]
 class Assignment extends Model
 {
@@ -84,7 +85,7 @@ class Assignment extends Model
             'due_at' => 'datetime',
             'overdue' => 'boolean',
             'status' => AssignmentStatus::class,
-            'model' => ClaudeModel::class,
+            'engine' => SolverEngine::class,
             'effort' => Effort::class,
             'generated_at' => 'datetime',
         ];

@@ -1,9 +1,9 @@
 <?php
 
 use App\Enums\AssignmentStatus;
-use App\Enums\ClaudeModel;
 use App\Enums\Effort;
 use App\Enums\RunType;
+use App\Enums\SolverEngine;
 use App\Models\Assignment;
 use App\Models\AssignmentFile;
 use App\Models\Run;
@@ -22,6 +22,8 @@ new #[Title('Assignment')] class extends Component {
 
     public string $content = '';
 
+    public string $redoEngine = '';
+
     public string $redoModel = '';
 
     public string $redoEffort = '';
@@ -29,7 +31,8 @@ new #[Title('Assignment')] class extends Component {
     public function mount(): void
     {
         $settings = Setting::current();
-        $this->redoModel = ($this->assignment->model ?? $settings->model)->value;
+        $this->redoEngine = ($this->assignment->engine ?? $settings->engine)->value;
+        $this->redoModel = $this->assignment->model ?? $settings->model;
         $this->redoEffort = ($this->assignment->effort ?? $settings->effort)->value;
 
         if ($first = $this->assignment->draftFiles->first()) {
@@ -75,10 +78,19 @@ new #[Title('Assignment')] class extends Component {
         Flux::toast(variant: 'success', text: __('Status updated to :status.', ['status' => $status->label()]));
     }
 
+    public function updatedRedoEngine(string $value): void
+    {
+        $engine = SolverEngine::tryFrom($value);
+        if ($engine && ! array_key_exists($this->redoModel, $engine->models())) {
+            $this->redoModel = $engine->defaultModel();
+        }
+    }
+
     public function redo(): void
     {
         $this->validate([
-            'redoModel' => ['required', Rule::enum(ClaudeModel::class)],
+            'redoEngine' => ['required', Rule::enum(SolverEngine::class)],
+            'redoModel' => SolverEngine::modelRules(),
             'redoEffort' => ['required', Rule::enum(Effort::class)],
         ]);
 
@@ -88,7 +100,13 @@ new #[Title('Assignment')] class extends Component {
             return;
         }
 
-        $run = Run::queue(RunType::Redo, ClaudeModel::from($this->redoModel), Effort::from($this->redoEffort), $this->assignment);
+        $run = Run::queue(
+            RunType::Redo,
+            SolverEngine::from($this->redoEngine),
+            $this->redoModel,
+            Effort::from($this->redoEffort),
+            $this->assignment,
+        );
         Flux::modal('redo')->close();
         $this->redirectRoute('runs.show', $run, navigate: true);
     }
@@ -112,7 +130,7 @@ new #[Title('Assignment')] class extends Component {
                 </flux:text>
                 @if ($assignment->model)
                     <flux:text class="text-xs">
-                        · {{ $assignment->model->label() }} / {{ $assignment->effort?->label() }} · {{ $assignment->generated_at?->format('d/m H:i') }}
+                        · {{ SolverEngine::modelLabel($assignment->model) }} / {{ $assignment->effort?->label() }} · {{ $assignment->generated_at?->format('d/m H:i') }}
                     </flux:text>
                 @endif
             </div>
@@ -217,11 +235,19 @@ new #[Title('Assignment')] class extends Component {
                 <flux:heading size="lg">{{ __('Redo assignment') }}</flux:heading>
                 <flux:text class="mt-2">{{ __('The current draft will be replaced, including your edits.') }}</flux:text>
             </div>
-            <flux:select wire:model="redoModel" :label="__('Model')">
-                @foreach (ClaudeModel::cases() as $option)
+            <flux:select wire:model.live="redoEngine" :label="__('Generate drafts with')">
+                @foreach (SolverEngine::cases() as $option)
                     <flux:select.option :value="$option->value">{{ $option->label() }}</flux:select.option>
                 @endforeach
             </flux:select>
+            <div>
+                <flux:input wire:model="redoModel" :label="__('Model')" list="redo-model-suggestions" autocomplete="off" />
+                <datalist id="redo-model-suggestions">
+                    @foreach (SolverEngine::tryFrom($redoEngine)?->models() ?? [] as $id => $label)
+                        <option value="{{ $id }}">{{ $label }}</option>
+                    @endforeach
+                </datalist>
+            </div>
             <flux:select wire:model="redoEffort" :label="__('Effort')">
                 @foreach (Effort::cases() as $option)
                     <flux:select.option :value="$option->value">{{ $option->label() }}</flux:select.option>

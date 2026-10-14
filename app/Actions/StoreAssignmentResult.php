@@ -51,6 +51,7 @@ class StoreAssignmentResult
                 $assignment->fill([
                     'summary' => $meta['summary'] ?? null,
                     'review_notes' => $meta['review_notes'] ?? null,
+                    'engine' => $run->engine,
                     'model' => $run->model,
                     'effort' => $run->effort,
                     'generated_at' => now(),

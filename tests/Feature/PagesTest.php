@@ -71,10 +71,38 @@ class PagesTest extends TestCase
         $this->assertTrue($settings->enabled);
         $this->assertSame(['07:30', '19:00'], $settings->run_times);
         $this->assertSame([1, 3], $settings->weekdays);
-        $this->assertSame('claude-sonnet-5-5', $settings->model->value);
+        $this->assertSame('claude-sonnet-5-5', $settings->model);
         $this->assertSame('api', $settings->engine->value);
         $this->assertSame('old-secret', $settings->moodle_password);
         $this->assertSame('sk-new', $settings->anthropic_api_key);
+    }
+
+    public function test_switching_engine_picks_its_default_model_and_saves_the_gemini_key(): void
+    {
+        $this->actingAs(User::factory()->create());
+
+        Livewire::test('pages::automation')
+            ->set('engine', 'gemini')
+            ->assertSet('model', 'gemini-3.8-flash')
+            ->set('model', 'gemini-custom-preview')
+            ->set('gemini_api_key', 'AIza-test')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $settings = Setting::current();
+        $this->assertSame('gemini', $settings->engine->value);
+        $this->assertSame('gemini-custom-preview', $settings->model);
+        $this->assertSame('AIza-test', $settings->gemini_api_key);
+    }
+
+    public function test_automation_rejects_unsafe_model_ids(): void
+    {
+        $this->actingAs(User::factory()->create());
+
+        Livewire::test('pages::automation')
+            ->set('model', '--dangerously-skip-permissions')
+            ->call('save')
+            ->assertHasErrors('model');
     }
 
     public function test_automation_rejects_invalid_times(): void
@@ -108,7 +136,9 @@ class PagesTest extends TestCase
         $assignment = $this->assignment();
 
         Livewire::test('pages::assignments.show', ['assignment' => $assignment])
-            ->set('redoModel', 'claude-haiku-5-5')
+            ->set('redoEngine', 'gemini')
+            ->assertSet('redoModel', 'gemini-3.8-flash')
+            ->set('redoModel', 'gemini-2.5-pro')
             ->set('redoEffort', 'low')
             ->call('redo')
             ->assertRedirect();
@@ -116,7 +146,8 @@ class PagesTest extends TestCase
         $run = Run::query()->latest('id')->firstOrFail();
         $this->assertSame(RunType::Redo, $run->type);
         $this->assertSame($assignment->id, $run->assignment_id);
-        $this->assertSame('claude-haiku-5-5', $run->model->value);
+        $this->assertSame('gemini', $run->engine->value);
+        $this->assertSame('gemini-2.5-pro', $run->model);
         $this->assertTrue($run->force);
     }
 }
