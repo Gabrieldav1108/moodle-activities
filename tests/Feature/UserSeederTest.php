@@ -12,6 +12,14 @@ class UserSeederTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Independent of the local .env, which holds the real owner.
+        config(['owner.name' => 'Dashboard Owner', 'owner.email' => 'owner@example.com', 'owner.password' => '']);
+    }
+
     public function test_creates_a_verified_owner(): void
     {
         $this->seed(UserSeeder::class);
