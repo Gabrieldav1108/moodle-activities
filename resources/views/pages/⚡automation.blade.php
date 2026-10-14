@@ -2,6 +2,7 @@
 
 use App\Enums\ClaudeModel;
 use App\Enums\Effort;
+use App\Enums\SolverEngine;
 use App\Models\Setting;
 use Flux\Flux;
 use Illuminate\Validation\Rule;
@@ -17,6 +18,8 @@ new #[Title('Automation')] class extends Component {
 
     /** @var list<int|string> */
     public array $weekdays = [];
+
+    public string $engine = '';
 
     public string $model = '';
 
@@ -39,6 +42,7 @@ new #[Title('Automation')] class extends Component {
         $settings = Setting::current();
 
         $this->fill($settings->only(['enabled', 'run_times', 'weekdays', 'days_back', 'days_ahead', 'moodle_url']));
+        $this->engine = $settings->engine->value;
         $this->model = $settings->model->value;
         $this->effort = $settings->effort->value;
         $this->moodle_username = (string) $settings->moodle_username;
@@ -63,6 +67,7 @@ new #[Title('Automation')] class extends Component {
             'run_times.*' => ['required', 'date_format:H:i', 'distinct'],
             'weekdays' => ['array'],
             'weekdays.*' => ['integer', 'between:0,6'],
+            'engine' => ['required', Rule::enum(SolverEngine::class)],
             'model' => ['required', Rule::enum(ClaudeModel::class)],
             'effort' => ['required', Rule::enum(Effort::class)],
             'days_back' => ['required', 'integer', 'between:0,365'],
@@ -152,6 +157,12 @@ new #[Title('Automation')] class extends Component {
         <flux:card class="space-y-6">
             <flux:heading size="lg">{{ __('AI model') }}</flux:heading>
 
+            <flux:radio.group wire:model="engine" :label="__('Generate drafts with')">
+                @foreach (SolverEngine::cases() as $option)
+                    <flux:radio :value="$option->value" :label="$option->label()" />
+                @endforeach
+            </flux:radio.group>
+
             <div class="grid gap-4 sm:grid-cols-2">
                 <flux:select wire:model="model" :label="__('Model')">
                     @foreach (ClaudeModel::cases() as $option)
@@ -182,7 +193,7 @@ new #[Title('Automation')] class extends Component {
             </div>
             <flux:input wire:model="anthropic_api_key" :label="__('Anthropic API key')" type="password" viewable autocomplete="off"
                 :placeholder="filled($this->settings->anthropic_api_key) ? '•••••••• '.__('set') : __('not set')"
-                :description="__('Leave blank to keep the current one.')" />
+                :description="__('Only needed when drafts are generated with the Anthropic API. Leave blank to keep the current one.')" />
 
             <flux:input :value="config('services.worker.token')" :label="__('Worker token')" readonly copyable
                 :description="__('Copy into WORKER_TOKEN in worker/.env (defined in the app .env).')" />

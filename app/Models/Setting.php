@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\ClaudeModel;
 use App\Enums\Effort;
+use App\Enums\SolverEngine;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -15,6 +16,7 @@ use Illuminate\Support\Carbon;
  *
  * @property int $id
  * @property bool $enabled
+ * @property SolverEngine $engine
  * @property list<string> $run_times
  * @property list<int> $weekdays
  * @property ClaudeModel $model
@@ -28,7 +30,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $worker_seen_at
  */
 #[Fillable([
-    'enabled', 'run_times', 'weekdays', 'model', 'effort', 'days_back', 'days_ahead',
+    'enabled', 'engine', 'run_times', 'weekdays', 'model', 'effort', 'days_back', 'days_ahead',
     'moodle_url', 'moodle_username', 'moodle_password', 'anthropic_api_key', 'worker_seen_at',
 ])]
 #[Hidden(['moodle_password', 'anthropic_api_key'])]
@@ -38,6 +40,7 @@ class Setting extends Model
     {
         return self::query()->firstOrCreate([], [
             'enabled' => false,
+            'engine' => SolverEngine::ClaudeCode,
             'run_times' => ['07:00', '19:00'],
             'weekdays' => [0, 1, 2, 3, 4, 5, 6],
             'model' => ClaudeModel::Opus55,
@@ -88,6 +91,7 @@ class Setting extends Model
     {
         return [
             'enabled' => 'boolean',
+            'engine' => SolverEngine::class,
             'run_times' => 'array',
             'weekdays' => 'array',
             'model' => ClaudeModel::class,

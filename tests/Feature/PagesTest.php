@@ -60,6 +60,7 @@ class PagesTest extends TestCase
             ->set('enabled', true)
             ->set('run_times', ['19:00', '07:30'])
             ->set('weekdays', ['1', '3'])
+            ->set('engine', 'api')
             ->set('model', 'claude-sonnet-5-5')
             ->set('effort', 'medium')
             ->set('anthropic_api_key', 'sk-new')
@@ -71,6 +72,7 @@ class PagesTest extends TestCase
         $this->assertSame(['07:30', '19:00'], $settings->run_times);
         $this->assertSame([1, 3], $settings->weekdays);
         $this->assertSame('claude-sonnet-5-5', $settings->model->value);
+        $this->assertSame('api', $settings->engine->value);
         $this->assertSame('old-secret', $settings->moodle_password);
         $this->assertSame('sk-new', $settings->anthropic_api_key);
     }

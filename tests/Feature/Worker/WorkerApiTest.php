@@ -82,6 +82,7 @@ class WorkerApiTest extends TestCase
         $this->worker()->postJson(route('worker.claim'))
             ->assertOk()
             ->assertJsonPath('run.id', $first->id)
+            ->assertJsonPath('engine', 'claude_code')
             ->assertJsonPath('moodle.username', 'aluno')
             ->assertJsonPath('moodle.password', 'senha')
             ->assertJsonPath('anthropic_api_key', 'sk-test')

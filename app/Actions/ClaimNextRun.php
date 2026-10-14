@@ -43,6 +43,7 @@ class ClaimNextRun
 
         return [
             'run' => ['id' => $run->id, 'type' => $run->type->value],
+            'engine' => $settings->engine->value,
             'model' => $run->model->value,
             'effort' => $run->effort->value,
             'force' => $run->force,
