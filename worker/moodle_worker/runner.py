@@ -79,7 +79,8 @@ def select_assignments(moodle: Moodle, job: dict, log: RunLogger) -> list[Assign
 def handle(client: DashboardClient, job: dict) -> None:
     run_id = job["run"]["id"]
     with RunLogger(client, run_id) as log:
-        log(f"run #{run_id} ({job['run']['type']}) · {job['model']} · effort {job['effort']}")
+        engine = job.get("engine", "claude_code")
+        log(f"run #{run_id} ({job['run']['type']}) · {engine} · {job['model']} · effort {job['effort']}")
         try:
             creds = job["moodle"]
             if not creds.get("username") or not creds.get("password"):
@@ -95,8 +96,8 @@ def handle(client: DashboardClient, job: dict) -> None:
                 log(f"- {assignment.name} ({assignment.course})")
                 try:
                     with tempfile.TemporaryDirectory(prefix="moodle-worker-") as tmp:
-                        result = process(moodle, assignment, Path(tmp), job["model"], job["effort"],
-                                         job.get("anthropic_api_key"), log)
+                        result = process(moodle, assignment, Path(tmp), engine, job["model"],
+                                         job["effort"], job.get("anthropic_api_key"), log)
                         client.upload_assignment(run_id, result)
                     if result.meta["status"] == "failed":
                         failures += 1

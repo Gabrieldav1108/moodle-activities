@@ -8,8 +8,9 @@ from typing import Callable
 
 from bs4 import BeautifulSoup
 
+from . import api_solver, claude_code
 from .moodle import Assignment, Moodle
-from .solver import solve
+from .prompts import QUIZ_NOTE
 
 Log = Callable[[str], None]
 
@@ -25,6 +26,7 @@ def process(
     moodle: Moodle,
     assignment: Assignment,
     work_dir: Path,
+    engine: str,
     model: str,
     effort: str,
     api_key: str | None,
@@ -58,19 +60,21 @@ def process(
         attachments=attachments,
     )
 
-    if not api_key:
+    if engine == "api" and not api_key:
         log("    no Anthropic API key set: skipping the draft")
         return result
 
     context = (f"Curso: {assignment.course}\nAtividade ({assignment.module}): {assignment.name}\n"
-               f"Prazo: {assignment.due_at_fmt}\n\nEnunciado:\n{statement}")
+               f"Prazo: {assignment.due_at_fmt}\n\nEnunciado:\n{statement or '(sem descrição; veja os anexos)'}")
     if assignment.module == "quiz":
-        context += ("\n\nObs.: é um questionário do Moodle; as perguntas só aparecem "
-                    "ao iniciar a tentativa. Prepare um material de estudo sobre o tema.")
+        context += QUIZ_NOTE
 
-    log(f"    generating draft with {model} (effort {effort})...")
+    log(f"    generating draft via {engine} with {model} (effort {effort})...")
     try:
-        answer = solve(context, attachments, model, effort, api_key)
+        if engine == "api":
+            answer = api_solver.solve(context, attachments, model, effort, api_key)
+        else:
+            answer = claude_code.solve(context, work_dir, attachments, model, effort, log)
     except Exception as e:  # noqa: BLE001 - reported back to the dashboard
         log(f"    failed to generate the draft: {e}")
         result.meta.update(status="failed", error=str(e))

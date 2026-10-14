@@ -1,4 +1,4 @@
-"""Drafts a solution for an assignment with Claude."""
+"""Drafts a solution with the Anthropic API (billed per use)."""
 
 from __future__ import annotations
 
@@ -9,25 +9,12 @@ from pathlib import Path
 
 import anthropic
 
+from .prompts import GUIDELINES
+
 # Models that accept the server-side refusal fallback (Haiku 5.5 does not).
 FALLBACK_MODELS = {"claude-opus-5-5", "claude-sonnet-5-5", "claude-fable-5-1"}
 
-# The prompt stays in Portuguese: drafts must be written in pt-BR.
-SYSTEM = """Você é um assistente que ajuda um estudante do IFRS a preparar um \
-RASCUNHO de resolução de uma atividade do Moodle. O estudante vai revisar, \
-entender e ajustar o material antes de entregar, então:
-
-- Resolva a atividade de forma completa e correta, seguindo exatamente o que o \
-enunciado pede (formato, linguagem de programação, número de páginas etc.).
-- Escreva em português do Brasil, salvo se o enunciado pedir outro idioma.
-- Explique o raciocínio em `review_notes` (em Markdown): o que foi assumido, \
-pontos que o estudante deve conferir, trechos que dependem de dados que você \
-não tinha.
-- Se o enunciado pedir arquivos (código, relatório, planilha em CSV...), gere \
-cada um em `files` com caminho relativo e conteúdo completo. Para texto \
-corrido, use um arquivo `resposta.md`.
-- Se faltar informação essencial (ex.: material de aula não anexado), faça o \
-melhor possível e deixe isso claro nas notas."""
+SYSTEM = GUIDELINES
 
 SCHEMA = {
     "type": "object",
