@@ -97,7 +97,7 @@ def handle(client: DashboardClient, job: dict) -> None:
                 try:
                     with tempfile.TemporaryDirectory(prefix="moodle-worker-") as tmp:
                         result = process(moodle, assignment, Path(tmp), engine, job["model"],
-                                         job["effort"], job.get("anthropic_api_key"), log)
+                                         job["effort"], job.get("api_key"), log)
                         client.upload_assignment(run_id, result)
                     if result.meta["status"] == "failed":
                         failures += 1

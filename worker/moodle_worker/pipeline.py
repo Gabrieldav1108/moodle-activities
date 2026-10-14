@@ -8,7 +8,7 @@ from typing import Callable
 
 from bs4 import BeautifulSoup
 
-from . import api_solver, claude_code
+from . import api_solver, claude_code, gemini_solver
 from .moodle import Assignment, Moodle
 from .prompts import QUIZ_NOTE
 
@@ -60,8 +60,8 @@ def process(
         attachments=attachments,
     )
 
-    if engine == "api" and not api_key:
-        log("    no Anthropic API key set: skipping the draft")
+    if engine in ("api", "gemini") and not api_key:
+        log(f"    no API key set for {engine} on the Automation page: skipping the draft")
         return result
 
     context = (f"Curso: {assignment.course}\nAtividade ({assignment.module}): {assignment.name}\n"
@@ -73,6 +73,8 @@ def process(
     try:
         if engine == "api":
             answer = api_solver.solve(context, attachments, model, effort, api_key)
+        elif engine == "gemini":
+            answer = gemini_solver.solve(context, attachments, model, effort, api_key)
         else:
             answer = claude_code.solve(context, work_dir, attachments, model, effort, log)
     except Exception as e:  # noqa: BLE001 - reported back to the dashboard
