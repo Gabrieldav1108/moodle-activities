@@ -148,7 +148,8 @@ class Moodle:
             parts = main.select(selector)
             if parts:
                 break
-        assignment.statement_html = "\n".join(str(p) for p in parts) or str(main)
+        # Quizzes often have no description; never fall back to the whole page.
+        assignment.statement_html = "\n".join(str(p) for p in parts)
 
         urls = []
         for a in main.select('a[href*="/pluginfile.php/"]'):
