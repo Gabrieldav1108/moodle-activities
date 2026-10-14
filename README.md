@@ -44,6 +44,12 @@ Chosen on the Automation page:
   subscription limits; no API key needed. The CLI must be logged in (`claude` once).
 - **Anthropic API**: single Messages API call with the attachments; needs an API key
   and is billed per token.
+- **Google Gemini** (free tier): single `generate_content` call with PDFs/images inline
+  and a JSON schema for the answer. Get a free key at https://aistudio.google.com/apikey.
+  Free-tier requests are rate limited and Google may use them to improve its products.
+
+The model field is free text with suggestions per provider, so new model IDs work
+without code changes. Effort maps to Gemini's thinking level (low/medium/high).
 
 ## Pages
 
