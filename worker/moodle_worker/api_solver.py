@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import base64
 import json
-import mimetypes
 from pathlib import Path
 
 import anthropic
 
+from .attachments import classify
 from .prompts import GUIDELINES
 
 # Models that accept the server-side refusal fallback (Haiku 5.5 does not).
@@ -38,30 +38,16 @@ SCHEMA = {
     "additionalProperties": False,
 }
 
-TEXT_EXTENSIONS = {".txt", ".md", ".py", ".java", ".c", ".cpp", ".h", ".js", ".ts",
-                   ".html", ".css", ".sql", ".csv", ".json", ".xml", ".php", ".ipynb"}
-IMAGE_TYPES = {"image/png", "image/jpeg", "image/gif", "image/webp"}
-
-
 def _attachment_blocks(path: Path) -> list[dict]:
-    ext = path.suffix.lower()
-    mime = mimetypes.guess_type(path.name)[0] or ""
+    att = classify(path)
+    if att.kind in ("text", "unsupported"):
+        return [{"type": "text", "text": att.text}]
+    data = base64.standard_b64encode(path.read_bytes()).decode()
     label = {"type": "text", "text": f"Anexo: {path.name}"}
-    if ext == ".pdf":
-        data = base64.standard_b64encode(path.read_bytes()).decode()
+    if att.kind == "pdf":
         return [label, {"type": "document", "title": path.name,
-                        "source": {"type": "base64", "media_type": "application/pdf", "data": data}}]
-    if mime in IMAGE_TYPES:
-        data = base64.standard_b64encode(path.read_bytes()).decode()
-        return [label, {"type": "image", "source": {"type": "base64", "media_type": mime, "data": data}}]
-    if ext == ".docx":
-        import docx
-        text = "\n".join(p.text for p in docx.Document(str(path)).paragraphs)
-        return [{"type": "text", "text": f"Anexo: {path.name}\n\n{text}"}]
-    if ext in TEXT_EXTENSIONS:
-        text = path.read_text(errors="replace")
-        return [{"type": "text", "text": f"Anexo: {path.name}\n\n```\n{text}\n```"}]
-    return [{"type": "text", "text": f"Anexo não lido (formato {ext}): {path.name}"}]
+                        "source": {"type": "base64", "media_type": att.mime, "data": data}}]
+    return [label, {"type": "image", "source": {"type": "base64", "media_type": att.mime, "data": data}}]
 
 
 def solve(context: str, attachments: list[Path], model: str, effort: str, api_key: str) -> dict:
