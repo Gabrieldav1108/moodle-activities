@@ -30,8 +30,20 @@ lerd worker start moodle-worker # Python worker (host command, asks for approval
 ```
 
 Then open https://ifrs-painel.test, log in and fill in **Automation**:
-run times, weekdays, model, effort, Moodle credentials and Anthropic API key
-(secrets are stored encrypted with `APP_KEY`).
+run times, weekdays, model, effort and the Moodle credentials (secrets are stored
+encrypted with `APP_KEY`).
+
+## Draft engines
+
+Chosen on the Automation page:
+
+- **Claude Code on this machine** (default): the worker runs `claude -p` headless in a
+  temporary directory with only file tools (`Read, Write, Edit, Glob, Grep`, `--restricted`,
+  no Bash/web/MCP). Claude reads `attachments/`, writes the solution into `draft/` and
+  returns the summary and review notes as structured output. Uses your Claude
+  subscription limits; no API key needed. The CLI must be logged in (`claude` once).
+- **Anthropic API**: single Messages API call with the attachments; needs an API key
+  and is billed per token.
 
 ## Pages
 
